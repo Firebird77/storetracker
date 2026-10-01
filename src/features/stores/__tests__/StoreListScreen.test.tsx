@@ -77,6 +77,24 @@ describe('StoreListScreen', () => {
     await waitFor(() => expect(screen.queryByLabelText('Chargement de la suite')).not.toBeOnTheScreen());
   });
 
+  it('propose de réessayer si la page suivante échoue', async () => {
+    const user = userEvent.setup();
+    getStores
+      .mockResolvedValueOnce(page(ALL.slice(0, 20), 1, true))
+      .mockRejectedValueOnce(new Error('Erreur réseau'))
+      .mockResolvedValue(page(ALL.slice(20), 2));
+    await renderScreen(StoreListScreen);
+    await screen.findByText(ALL[0]!.name);
+
+    await fireEvent(screen.getByTestId('store-list'), 'onEndReached');
+    await user.press(await screen.findByRole('button', { name: 'Erreur de chargement, réessayer' }));
+
+    expect(getStores).toHaveBeenLastCalledWith(2, '');
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Erreur de chargement, réessayer' })).not.toBeOnTheScreen(),
+    );
+  });
+
   it('navigue vers le détail au clic sur un magasin', async () => {
     const user = userEvent.setup();
     getStores.mockResolvedValue(page(ALL.slice(0, 20), 1, true));

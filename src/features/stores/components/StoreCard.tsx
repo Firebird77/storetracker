@@ -22,7 +22,7 @@ export const StoreCard = memo(function StoreCard({ store, onPress }: StoreCardPr
         role="button"
         aria-label={`${store.name}, ${store.city}`}
         accessibilityHint="Ouvre le détail du magasin"
-        style={styles.info}
+        style={({ pressed }) => [styles.info, pressed && styles.pressed]}
       >
         <Text style={styles.name} numberOfLines={1}>
           {store.name}
@@ -47,6 +47,7 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   info: { flex: 1 },
+  pressed: { opacity: 0.5 },
   name: { fontSize: 16, fontWeight: '600', color: colors.text },
   address: { color: colors.textMuted, marginTop: 2 },
 });

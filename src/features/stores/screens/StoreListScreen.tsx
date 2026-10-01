@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Button, StyleSheet, View } from 'react-native';
 
 import { SearchBar } from '../../../components/SearchBar';
 import { StateView } from '../../../components/StateView';
@@ -14,8 +14,17 @@ export function StoreListScreen() {
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebouncedValue(search, 300);
 
-  const { stores, error, isPending, isError, isFetchingNextPage, hasNextPage, fetchNextPage, refetch } =
-    useStoresInfinite(debouncedSearch);
+  const {
+    stores,
+    error,
+    isPending,
+    isError,
+    isFetchingNextPage,
+    isFetchNextPageError,
+    hasNextPage,
+    fetchNextPage,
+    refetch,
+  } = useStoresInfinite(debouncedSearch);
 
   const onPressStore = useCallback(
     (storeId: string) => navigation.navigate('StoreDetail', { storeId }),
@@ -23,8 +32,22 @@ export function StoreListScreen() {
   );
 
   const onEndReached = useCallback(() => {
-    if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+    if (hasNextPage && !isFetchingNextPage && !isFetchNextPageError) void fetchNextPage();
+  }, [hasNextPage, isFetchingNextPage, isFetchNextPageError, fetchNextPage]);
+
+  const renderFooter = () => {
+    if (isFetchingNextPage) {
+      return <ActivityIndicator style={styles.footer} aria-label="Chargement de la suite" />;
+    }
+    if (isFetchNextPageError) {
+      return (
+        <View style={styles.footer}>
+          <Button title="Erreur de chargement, réessayer" onPress={() => void fetchNextPage()} />
+        </View>
+      );
+    }
+    return null;
+  };
 
   const renderBody = () => {
     if (isPending) return <StateView variant="loading" />;
@@ -39,11 +62,7 @@ export function StoreListScreen() {
         onEndReached={onEndReached}
         onEndReachedThreshold={0.5}
         ListEmptyComponent={<StateView variant="empty" message="Aucun magasin trouvé" />}
-        ListFooterComponent={
-          isFetchingNextPage ? (
-            <ActivityIndicator style={styles.footer} aria-label="Chargement de la suite" />
-          ) : null
-        }
+        ListFooterComponent={renderFooter()}
       />
     );
   };
